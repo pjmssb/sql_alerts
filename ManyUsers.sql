@@ -1,20 +1,18 @@
 SELECT 
-    current_timestamp as detection_time,
-    id_votacion,
-    ip_publica,
-    date_trunc('hour', fecha_hora) + 
-        (date_part('minute', fecha_hora)::int / 30) * interval '30 min' as time_slice,
-    min(fecha_hora) as ini,
-    max(fecha_hora) as fin,
-    count(*) as number_records
+    b.id_votacion, 
+    b.ip_publica, 
+    'many_users' as event, 
+    COUNT(DISTINCT b.usuario) as count
 FROM 
-    binnacle
+    binnacle b
+JOIN 
+    voting v ON v.id = b.id_votacion
 WHERE 
-    fecha_hora > '2023-04-03 17:00:00'
+    b.evento = 'ingreso_papeleta' 
+    AND b.fecha_hora >= (NOW() - INTERVAL '5 minutes') 
+    AND v.state_id >= 4
 GROUP BY 
-    id_votacion,
-    ip_publica,
-    date_trunc('hour', fecha_hora) + 
-        (date_part('minute', fecha_hora)::int / 30) * interval '30 min'
+    b.id_votacion, 
+    b.ip_publica
 HAVING 
-    count(DISTINCT usuario) > 5;
+    COUNT(DISTINCT b.usuario) > 4;
